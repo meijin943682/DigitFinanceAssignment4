@@ -6,6 +6,7 @@ contract Bank {
 
 	// 儲存所有會員的餘額
     mapping (address => uint256) private balance;
+    mapping (address => uint256) private CD;
 
 	// 事件們，用於通知前端 web3.js
     event DepositEvent(address indexed from, uint256 value, uint256 timestamp);
@@ -61,5 +62,21 @@ contract Bank {
 
     function kill() public isOwner {
         selfdestruct(owner);
+    }
+
+    function certificateDeposit() public payable{
+      CD[msg.sender] += msg.value;
+      emit DepositEvent(msg.sender, msg.value, now);
+    }
+
+    function paybackCertificateDeposit() public{
+      uint256 weiValue = etherValue * 1 ether;
+
+      require(balance[msg.sender] >= weiValue, "your balances are not enough");
+
+      balance[msg.sender] -= weiValue;
+      balance[to] += weiValue;
+
+      emit TransferEvent(msg.sender, to, etherValue, now);
     }
 }
