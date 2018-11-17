@@ -39,6 +39,7 @@
 			<h3 id="accountStatus">帳戶狀態</h3>
 			<h5 id="ethBalance">以太帳戶餘額 (wei): </h5>
 			<h5 id="bankBalance">銀行ETH餘額 (wei): </h5>
+			<h5 id="CDBalance">定存ETH餘額 (wei): </h5>
 
 			<hr>
 			<h3 id="updateCoin">更新餘額</h3>
@@ -62,16 +63,16 @@
 			
       <hr>
 			<h3>購買定存</h3>
-			<input id="transferEtherTo" type="number" placeholder="請輸入定存額度 (ether)">
-			<input id="transferEtherValue" type="number" placeholder="請輸入定存期數">
-			<button id="transferEtherButton">購買</button>
-			<h5 id="CertiDepositAmount">金額: </h5>
-			<h5 id="certiDepositPeriod">期數: </h5>
+			<input id="certiDepositValue" type="number" placeholder="請輸入定存額度 (ether)">
+			<input id="certiDepositPeriod" type="number" placeholder="請輸入定存期數">
+			<button id="certiDepositButton">購買</button>
+			<h5>金額: </h5>
+			<h5>期數: </h5>
 
-      <button id="transferEtherButton">合約期滿</button>
+      <button id="contractExpiredButton">合約期滿</button>
       <br>
       <input type="number" placeholder="已完成期數">
-      <button id="transferEtherButton">提前解約</button>
+      <button id="earlyTerminationButton">提前解約</button>
       <hr>
       <h3>期數 | 利率</h3>
       <font size="5">01 | </font><font>0.01</font><br>

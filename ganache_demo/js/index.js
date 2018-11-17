@@ -25,6 +25,13 @@ let transferEtherTo = $('#transferEtherTo');
 let transferEtherValue = $('#transferEtherValue');
 let transferEtherButton = $('#transferEtherButton');
 
+let certiDepositValue = $('#certiDepositValue');
+let certiDepositPeriod = $('#certiDepositPeriod');
+let certiDepositButton = $('#certiDepositButton');
+
+let contractExpiredButton = $('contractExpiredButton');
+let earlyTerminationButton = $('earlyTerminationButton');
+
 let bankAddress = "";
 let nowAccount = "";
 
@@ -104,22 +111,27 @@ update.on('click', async function () {
 	if (bankAddress != "") {
 		let ethBalance = await web3.eth.getBalance(nowAccount)
 		let bankBalance = await bank.methods.getBankBalance().call({ from: nowAccount })
+    let cdBalance = await bank.methods.getCDBalance().call({from: nowAccount})
 
 		log({
 			address: bankAddress,
 			ethBalance: ethBalance,
-			bankBalance: bankBalance
+			bankBalance: bankBalance,
+			cdBalance: cdBalance
 		})
 		log('更新帳戶資料')
 
 		$('#ethBalance').text('以太帳戶餘額 (wei): ' + ethBalance)
 		$('#bankBalance').text('銀行ETH餘額 (wei): ' + bankBalance)
+		$('#CDBalance').text('定存ETH餘額 (wei): ' + cdBalance)
+
 	}
 	else {
 		let ethBalance = await web3.eth.getBalance(nowAccount)
 
 		$('#ethBalance').text('以太帳戶餘額 (wei): ' + ethBalance)
 		$('#bankBalance').text('銀行ETH餘額 (wei): ')
+		$('#CDBalance').text('定存ETH餘額 (wei): ')
 	}
 })
 
@@ -136,7 +148,7 @@ killContractButton.on('click', async function () {
 		return;
 	}
 
-	// 更新介面 
+	// 更新介面
 	waitTransactionStatus();
 	// 刪除合約
 	bank.methods.kill().send({
@@ -153,12 +165,12 @@ killContractButton.on('click', async function () {
 			// 觸發更新帳戶資料
 			update.trigger('click');
 
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus();
 		})
 		.on('error', function (error) {
 			log(error.toString())
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus();
 		})
 })
@@ -176,7 +188,7 @@ depositButton.on('click', async function () {
 		return;
 	}
 
-	// 更新介面 
+	// 更新介面
 	waitTransactionStatus();
 	// 存款
 	bank.methods.deposit().send({
@@ -190,12 +202,12 @@ depositButton.on('click', async function () {
 			// 觸發更新帳戶資料
 			update.trigger('click')
 
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 		.on('error', function (error) {
 			log(error.toString())
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 })
@@ -226,12 +238,12 @@ withdrawButton.on('click', async function () {
 			// 觸發更新帳戶資料
 			update.trigger('click')
 
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 		.on('error', function (error) {
 			log(error.toString())
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 })
@@ -262,12 +274,12 @@ transferEtherButton.on('click', async function () {
 			// 觸發更新帳戶資料
 			update.trigger('click')
 
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 		.on('error', function (error) {
 			log(error.toString())
-			// 更新介面 
+			// 更新介面
 			doneTransactionStatus()
 		})
 })
@@ -353,3 +365,39 @@ async function unlockAccount() {
 			});
 	}
 }
+
+certiDepositButton.on('click', async function () {
+
+	if (bankAddress == "") {
+		return;
+	}
+
+	// 解鎖
+	let unlock = await unlockAccount();
+	if (!unlock) {
+		return;
+	}
+
+	// 更新介面
+	waitTransactionStatus();
+	// 存款
+	bank.methods.certiDeposit().send({
+		from: nowAccount,
+		gas: 3400000,
+		value: web3.utils.toWei(certiDepositValue.val(), 'ether')
+	})
+		.on('receipt', function (receipt) {
+			log(receipt.events.CertiDepositEvent.returnValues, '定存成功')
+
+			// 觸發更新帳戶資料
+			update.trigger('click')
+
+			// 更新介面
+			doneTransactionStatus()
+		})
+		.on('error', function (error) {
+			log(error.toString())
+			// 更新介面
+			doneTransactionStatus()
+		})
+})
