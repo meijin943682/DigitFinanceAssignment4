@@ -40,6 +40,7 @@
 			<h5 id="ethBalance">以太帳戶餘額 (wei): </h5>
 			<h5 id="bankBalance">銀行ETH餘額 (wei): </h5>
 			<h5 id="CDBalance">定存ETH餘額 (wei): </h5>
+			<h5 id="interestBalance">利息ETH餘額 (wei): </h5>
 
 			<hr>
 			<h3 id="updateCoin">更新餘額</h3>
@@ -66,12 +67,12 @@
 			<input id="certiDepositValue" type="number" placeholder="請輸入定存額度 (ether)">
 			<input id="certiDepositPeriod" type="number" placeholder="請輸入定存期數">
 			<button id="certiDepositButton">購買</button>
-			<h5>金額: </h5>
-			<h5>期數: </h5>
+			<h5 id="certiDepositValueShow">金額: </h5>
+			<h5 id="certiDepositPeriodShow">期數: </h5>
 
       <button id="contractExpiredButton">合約期滿</button>
       <br>
-      <input type="number" placeholder="已完成期數">
+      <input id="terminationPeriod" type="number" placeholder="已完成期數">
       <button id="earlyTerminationButton">提前解約</button>
       <hr>
       <h3>期數 | 利率</h3>

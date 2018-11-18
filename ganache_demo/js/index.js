@@ -29,15 +29,21 @@ let certiDepositValue = $('#certiDepositValue');
 let certiDepositPeriod = $('#certiDepositPeriod');
 let certiDepositButton = $('#certiDepositButton');
 
-let contractExpiredButton = $('contractExpiredButton');
-let earlyTerminationButton = $('earlyTerminationButton');
+let certiDepositValueShow = $('#certiDepositValueShow');
+let certiDepositPeriodShow = $('#certiDepositPeriodShow');
+
+let contractExpiredButton = $('#contractExpiredButton');
+let earlyTerminationButton = $('#earlyTerminationButton');
+let terminationPeriod = $('#terminationPeriod');
 
 let bankAddress = "";
 let nowAccount = "";
+let interest = 0;
 
 let web3 = new Web3('http://localhost:8545');
 
 let bank = new web3.eth.Contract(bankAbi);
+
 
 function log(...inputs) {
 	for (let input of inputs) {
@@ -112,6 +118,7 @@ update.on('click', async function () {
 		let ethBalance = await web3.eth.getBalance(nowAccount)
 		let bankBalance = await bank.methods.getBankBalance().call({ from: nowAccount })
     let cdBalance = await bank.methods.getCDBalance().call({from: nowAccount})
+		let interestBalance = await bank.methods.getInterestBalance().call({from: nowAccount})
 
 		log({
 			address: bankAddress,
@@ -124,6 +131,7 @@ update.on('click', async function () {
 		$('#ethBalance').text('以太帳戶餘額 (wei): ' + ethBalance)
 		$('#bankBalance').text('銀行ETH餘額 (wei): ' + bankBalance)
 		$('#CDBalance').text('定存ETH餘額 (wei): ' + cdBalance)
+		$('#interestBalance').text('利息ETH餘額 (wei): ' + interestBalance)
 
 	}
 	else {
@@ -132,6 +140,7 @@ update.on('click', async function () {
 		$('#ethBalance').text('以太帳戶餘額 (wei): ' + ethBalance)
 		$('#bankBalance').text('銀行ETH餘額 (wei): ')
 		$('#CDBalance').text('定存ETH餘額 (wei): ')
+		$('#interestBalance').text('利息ETH餘額 (wei): ')
 	}
 })
 
@@ -380,14 +389,85 @@ certiDepositButton.on('click', async function () {
 
 	// 更新介面
 	waitTransactionStatus();
-	// 存款
-	bank.methods.certiDeposit().send({
+	// 定存
+	bank.methods.certiDeposit(parseInt(certiDepositPeriod.val(), 10)).send({
 		from: nowAccount,
 		gas: 3400000,
 		value: web3.utils.toWei(certiDepositValue.val(), 'ether')
 	})
 		.on('receipt', function (receipt) {
 			log(receipt.events.CertiDepositEvent.returnValues, '定存成功')
+			$('#certiDepositValueShow').text('金額: ' + certiDepositValue.val())
+			$('#certiDepositPeriodShow').text('期數: ' + certiDepositPeriod.val())
+			// 觸發更新帳戶資料
+			update.trigger('click')
+
+			// 更新介面
+			doneTransactionStatus()
+		})
+		.on('error', function (error) {
+			log(error.toString())
+			$('#certiDepositValueShow').text('金額: ')
+			$('#certiDepositPeriodShow').text('期數: ')
+			// 更新介面
+			doneTransactionStatus()
+		})
+})
+
+contractExpiredButton.on('click', async function () {
+	if (bankAddress == "") {
+		return;
+	}
+
+	// 解鎖
+	let unlock = await unlockAccount();
+	if (!unlock) {
+		return;
+	}
+
+	// 更新介面
+	waitTransactionStatus()
+	// 合約完成
+	bank.methods.certiDepositPayback(true, 0).send({
+		from: nowAccount,
+		gas: 3400000
+	})
+		.on('receipt', function (receipt) {
+			log(receipt.events.CertiDepositPaybackEvent.returnValues, '合約完成')
+
+			// 觸發更新帳戶資料
+			update.trigger('click')
+
+			// 更新介面
+			doneTransactionStatus()
+		})
+		.on('error', function (error) {
+			log(error.toString())
+			// 更新介面
+			doneTransactionStatus()
+		})
+})
+
+earlyTerminationButton.on('click', async function () {
+	if (bankAddress == "") {
+		return;
+	}
+
+	// 解鎖
+	let unlock = await unlockAccount();
+	if (!unlock) {
+		return;
+	}
+
+	// 更新介面
+	waitTransactionStatus()
+	// 提前解約
+	bank.methods.certiDepositPayback(false, parseInt(terminationPeriod.val(), 10)).send({
+		from: nowAccount,
+		gas: 3400000
+	})
+		.on('receipt', function (receipt) {
+			log(receipt.events.CertiDepositPaybackEvent.returnValues, '提前解約')
 
 			// 觸發更新帳戶資料
 			update.trigger('click')

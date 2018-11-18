@@ -1,83 +1,98 @@
 pragma solidity ^0.5.0;
 
 contract Bank {
-	// 此合約的擁有者
-    address payable private owner;
+  // 此合約的擁有者
+  address payable private owner;
 
-	// 儲存所有會員的餘額
-    mapping (address => uint256) private balance;
-    mapping (address => uint256) private CD;
+  // 儲存所有會員的餘額
+  mapping (address => uint256) private balance;
+  mapping (address => uint256) private CD;
+  mapping (address => uint256) private periods;
+  mapping (address => uint256) private interest;
 
-	// 事件們，用於通知前端 web3.js
-    event DepositEvent(address indexed from, uint256 value, uint256 timestamp);
-    event WithdrawEvent(address indexed from, uint256 value, uint256 timestamp);
-    event TransferEvent(address indexed from, address indexed to, uint256 value, uint256 timestamp);
-    event CertiDepositEvent(address indexed from, uint256 value, uint256 timestamp);
-    event CertiDepositPaybackEvent(address indexed from, uint256 value, uint256 timestamp);
+  // 事件們，用於通知前端 web3.js
+  event DepositEvent(address indexed from, uint256 value, uint256 timestamp);
+  event WithdrawEvent(address indexed from, uint256 value, uint256 timestamp);
+  event TransferEvent(address indexed from, address indexed to, uint256 value, uint256 timestamp);
+  event CertiDepositEvent(address indexed from, uint256 value, uint256 timestamp);
+  event CertiDepositPaybackEvent(address indexed from, uint256 value, uint256 timestamp);
 
-    modifier isOwner() {
-        require(owner == msg.sender, "you are not owner");
-        _;
-    }
-    
-	// 建構子
-    constructor() public payable {
-        owner = msg.sender;
-    }
+  modifier isOwner() {
+    require(owner == msg.sender, "you are not owner");
+    _;
+  }
 
-	// 存錢
-    function deposit() public payable {
-        balance[msg.sender] += msg.value;
+  // 建構子
+  constructor() public payable {
+    owner = msg.sender;
+  }
 
-        emit DepositEvent(msg.sender, msg.value, now);
-    }
+  // 存錢
+  function deposit() public payable {
+    balance[msg.sender] += msg.value;
 
-	// 提錢
-    function withdraw(uint256 etherValue) public {
-        uint256 weiValue = etherValue * 1 ether;
+    emit DepositEvent(msg.sender, msg.value, now);
+  }
 
-        require(balance[msg.sender] >= weiValue, "your balances are not enough");
+  // 提錢
+  function withdraw(uint256 etherValue) public {
+    uint256 weiValue = etherValue * 1 ether;
 
-        msg.sender.transfer(weiValue);
+    require(balance[msg.sender] >= weiValue, "your balances are not enough");
 
-        balance[msg.sender] -= weiValue;
+    msg.sender.transfer(weiValue);
 
-        emit WithdrawEvent(msg.sender, etherValue, now);
-    }
+    balance[msg.sender] -= weiValue;
 
-	// 轉帳
-    function transfer(address to, uint256 etherValue) public {
-        uint256 weiValue = etherValue * 1 ether;
+    emit WithdrawEvent(msg.sender, etherValue, now);
+  }
 
-        require(balance[msg.sender] >= weiValue, "your balances are not enough");
+  // 轉帳
+  function transfer(address to, uint256 etherValue) public {
+    uint256 weiValue = etherValue * 1 ether;
 
-        balance[msg.sender] -= weiValue;
-        balance[to] += weiValue;
+    require(balance[msg.sender] >= weiValue, "your balances are not enough");
 
-        emit TransferEvent(msg.sender, to, etherValue, now);
-    }
+    balance[msg.sender] -= weiValue;
+    balance[to] += weiValue;
 
-	// 檢查銀行帳戶餘額
-    function getBankBalance() public view returns (uint256) {
-        return balance[msg.sender];
-    }
+    emit TransferEvent(msg.sender, to, etherValue, now);
+  }
 
-    function getCDBalance() public view returns (uint256){
-        return CD[msg.sender];
-    }
+  // 檢查銀行帳戶餘額
+  function getBankBalance() public view returns (uint256) {
+    return balance[msg.sender];
+  }
 
-    function certiDeposit() public payable{
-      CD[msg.sender] += msg.value;
-      emit CertiDepositEvent(msg.sender, msg.value, now);
-    }
+  // 檢查定存金額
+  function getCDBalance() public view returns (uint256){
+    return CD[msg.sender];
+  }
 
-    function certiDepositPayback() public{
-      msg.sender.transfer(CD[msg.sender]);
-      emit WithdrawEvent(msg.sender, CD[msg.sender], now);
-      CD[msg.sender] -= 0;
-    }
-    
-    function kill() public isOwner {
-        selfdestruct(owner);
-    }
+  // 檢查定存利潤金額
+  function getInterestBalance() public view returns (uint256){
+    return interest[msg.sender];
+  }
+
+  // 定存
+  function certiDeposit(uint256 period) public payable{
+    require(CD[msg.sender] == 0, "you can only make a certificate deposit.");
+    require(period >= 0 && period <= 12, "the period can only between 0 and 12");
+    CD[msg.sender] = msg.value;
+    periods[msg.sender] = period;
+    emit CertiDepositEvent(msg.sender, msg.value,now);
+  }
+
+  // 定存到期
+  function certiDepositPayback(bool isExpired, uint256 months) public{
+    require(months >= 0 && months < periods[msg.sender], "the number of periods can't exceed contract's.");
+    msg.sender.transfer(CD[msg.sender]);
+    interest[msg.sender] += (isExpired? CD[msg.sender] * periods[msg.sender] : CD[msg.sender] * months) / 100;
+    emit CertiDepositPaybackEvent(msg.sender, CD[msg.sender], now);
+    CD[msg.sender] = 0;
+  }
+
+  function kill() public isOwner {
+    selfdestruct(owner);
+  }
 }
