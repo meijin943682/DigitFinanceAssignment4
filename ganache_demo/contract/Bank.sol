@@ -69,7 +69,7 @@ contract Bank {
     return CD[msg.sender];
   }
 
-  // 檢查定存利潤金額
+  // 檢查定存利息金額
   function getInterestBalance() public view returns (uint256){
     return interest[msg.sender];
   }
